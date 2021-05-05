@@ -11,7 +11,7 @@ rooms = []
 class Room:
     def __init__(self, admin):
         self.created_at = time.time()
-        self.admin: User = admin,
+        self.admin: User = admin
         self.users: list[User] = [admin]
         self.status: int = 0  # Waiting = 0, In Game = 1
         self.spy: User = None
@@ -50,12 +50,11 @@ class Room:
             for i, room in rooms:
                 if room.id == self.id:
                     del rooms[i]
-
     def __hash__(self):
         return self.id
 
     def start_game(self):
-        if len(self.users) >= 4:
+        if len(self.users) >= 3: # TODO 3 Debug
             if self.status == 1:
                 raise GameAlreadyStartedError
             self.location = generate_location()

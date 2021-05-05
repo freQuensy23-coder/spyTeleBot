@@ -15,12 +15,17 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 
-async def notify(room: Room):
-    """Send notification msg to everybody in room when game stopped"""
-    for user in room.users:
-        log.info("Send notification msgs to user [ID: user.id].")
-        await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
-
+async def notify(room: Room, event: str):
+    """Send notification msg to everybody in room when game stopped or started
+    :param event start or stop
+    """
+    if event == "stop":
+        for user in room.users:
+            log.info("Send notification msgs to user [ID: user.id].")
+            await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
+    if event == "start":
+        # TODO
+        pass
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -70,7 +75,7 @@ async def stop_game_handler(message: Message):
         room = get_room_by_user(user=message.from_user)
         if room.admin == message.from_user:
             log.info(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
-            await notify(room)
+            await notify(room, "stop")
             room.stop_game()  # TODO Send room id to admin
             await message.reply(f"Game closed successfully! Invite friends, /j {room.id}")
         else:
@@ -90,6 +95,28 @@ async def create_room(message: Message):
     await message.reply(f"Room created succsessfully. To join it use: \n /j {room.id}")
     logging.info(f"Room [ID: {room.id}] created by user [ID: {message.from_user.id}]")
 
+
+@dp.message_handler(commands=["begin", "b"]) # TODO say to admin how to start game
+async def begin_game_handler(message: Message):
+    log.info(f"User [ID: {message.from_user.id}]] tried to start game")
+    try:
+        room = get_room_by_user(user=message.from_user)
+        if room.admin == message.from_user:
+            try:
+                log.info(f"User [ID: {message.from_user.id}] successfully started room [ID : {room.id}]")
+                room.start_game()
+                await notify(room, "start")
+            except NotEnoughPlayersError:
+                log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin game. Not enough players.")
+                await message.reply("You can't start game because there are not enough players") # TODO send room info
+
+        else:
+            log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin room [ID: {room.id}. He is not "
+                     f"admin")
+            await message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
+    except NoSuchRoomError:
+        log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin game. Room not found")
+        await message.reply("Room not found. Create it using /c or join /j")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
