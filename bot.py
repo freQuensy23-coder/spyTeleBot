@@ -15,11 +15,11 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 
-def notify(room: Room):
+async def notify(room: Room):
     """Send notification msg to everybody in room when game stopped"""
     for user in room.users:
         log.debug("Send notification msgs to user [ID: user.id].")
-        bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
+        await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
 
 
 @dp.message_handler(commands=['start', 'help'])
@@ -64,7 +64,7 @@ async def enter_room(message: Message):
 
 
 @dp.message_handler(commands=["/stop"])
-def stop_game_handler(message: Message):
+async def stop_game_handler(message: Message):
     log.debug(f"User [ID: {message.from_user.id}] tried to stop game.")
     try:
         room = get_room_by_user(user=message.from_user)
@@ -72,14 +72,24 @@ def stop_game_handler(message: Message):
             log.debug(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
             notify(room)
             room.stop_game()  # TODO Send room id to admin
-            message.reply(f"Game closed successfully! Invite friends, /j {room.id}")
+            await message.reply(f"Game closed successfully! Invite friends, /j {room.id}")
         else:
             log.debug(f"User [ID: {message.from_user.id}] tried to delete room [ID: {room.id}], but he is not admin.")
-            message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
+            await message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
     except NoSuchRoomError:
         log.debug(f"User [ID: {message.from_user.id}] tried to delete room, but he does not in any.")
-        message.reply("You are not in room.")
+        await message.reply("You are not in room.")
     # TODO Send room info command
+
+
+@dp.message_handler(commands=["create", "c"])
+async def create_room(message: Message):
+    log.debug(f"User [ID: {message.from_user.id}] tried to create room")
+    del_user(user=message.from_user)
+    room = Room(admin=message.from_user)
+    await message.reply(f"Room created succsessfully. To join it use /j {room.id}")
+    logging.debug(f"Room [ID: {room.id}] created by user [ID: {message.from_user.id}]")
+
 
 
 if __name__ == '__main__':
