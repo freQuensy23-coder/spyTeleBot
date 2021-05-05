@@ -35,6 +35,7 @@ async def create_room(message: Message):
     try:
         room_id = int(message.get_args()[-1].strip())
         try:
+            del_user(message.from_user)  # Delete this user from all other rooms
             room = add_user_to_room(room_id, user=message.from_user)  # TODO  Delete this user from all other rooms
             log.debug(f"User [ID: {message.from_user.id}] successfully entered room [ID: {room_id}")
             users_msg = ""

@@ -2,6 +2,7 @@ import time
 from random import randint, choice
 from logging import getLogger
 from aiogram.types import User, Message
+
 log = getLogger("Room")
 rooms = []
 
@@ -64,7 +65,9 @@ class Room:
         if self.status == 0:
             return True
         else:
-            return False # If game have already started
+            return False  # If game have already started
+
+
 # TODO STOP GAME
 
 def generate_location():
@@ -88,9 +91,18 @@ def add_user_to_room(room_id: int, user: User) -> Room:
     return room
 
 
+def del_user(user: User):
+    if rooms:
+        for room in rooms:
+            try:
+                room.remove(user)
+            except ValueError:
+                pass  # If such user not fount in this room
+
+
 class NoSuchRoomError(Exception):
-    pass # TODO Add logging to all Exceptions
-        # TODO Add exceptions to Exceptions file
+    pass  # TODO Add logging to all Exceptions
+    # TODO Add exceptions to Exceptions file
 
 
 class NotEnoughPlayersError(Exception):
