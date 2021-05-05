@@ -24,8 +24,13 @@ async def notify(room: Room, event: str):
             log.info("Send notification msgs to user [ID: user.id].")
             await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
     if event == "start":
-        # TODO
+        for user in room.users:
+            if user == room.spy:
+                await bot.send_message(user.id, "You are spy in this game. You guess location. Use /location") # TODO /location
+            else:
+                await bot.send_message(user.id, f"Lacation is {room.location}. You should find spy.")
         pass
+
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -68,16 +73,16 @@ async def enter_room(message: Message):
         log.info(f"Smth wrong with user [ID: {message.from_user.id}]. Exception {e}. Message {message.text}")
 
 
-@dp.message_handler(commands=["/stop"])
+@dp.message_handler(commands=["stop"])
 async def stop_game_handler(message: Message):
     log.info(f"User [ID: {message.from_user.id}] tried to stop game.")
     try:
         room = get_room_by_user(user=message.from_user)
         if room.admin == message.from_user:
             log.info(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
-            await notify(room, "stop")
+            await notify(room, "stop") # TODO Check if game started
             room.stop_game()  # TODO Send room id to admin
-            await message.reply(f"Game closed successfully! Invite friends, /j {room.id}")
+            await message.reply(f"Game ended successfully! You can play again now  (/b) or invite friends,\n /j {room.id}")
         else:
             log.info(f"User [ID: {message.from_user.id}] tried to delete room [ID: {room.id}], but he is not admin.")
             await message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
