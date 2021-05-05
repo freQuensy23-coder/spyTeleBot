@@ -3,6 +3,7 @@ from random import randint, choice
 from logging import getLogger
 from aiogram.types import User, Message
 from Exceptions import *
+
 log = getLogger("Room")
 rooms = []
 
@@ -10,12 +11,12 @@ rooms = []
 class Room:
     def __init__(self, admin):
         self.created_at = time.time()
-        self.admin = admin,
-        self.users = [admin]
-        self.status = 0  # Waiting = 0, In Game = 1
-        self.spy = None
+        self.admin: User = admin,
+        self.users: list[User] = [admin]
+        self.status: int = 0  # Waiting = 0, In Game = 1
+        self.spy: User = None
         self.location = None
-        self.id = -1
+        self.id: int = -1
         self.generate_room_id()
         rooms.append(self)
 
@@ -50,6 +51,9 @@ class Room:
                 if room.id == self.id:
                     del rooms[i]
 
+    def __hash__(self):
+        return self.id
+
     def start_game(self):
         if len(self.users) >= 4:
             if self.status == 1:
@@ -68,10 +72,10 @@ class Room:
             return False  # If game have already started
 
     def stop_game(self):
-        self.notify()
         self.spy = None
         self.location = None
         self.status = 0
+
 
 # TODO Waste cleaner - clean rooms that crated a long time ago
 
@@ -104,3 +108,14 @@ def del_user(user: User):
                 room.remove(user)
             except ValueError:
                 pass  # If such user not fount in this room
+
+
+def get_room_by_user(user: User) -> Room:
+    """Get the room the user is in"""
+    if rooms:
+        for room in rooms:
+            if user in room.users:
+                return room
+        raise NoSuchRoomError
+    else:
+        raise NoSuchRoomError
