@@ -1,0 +1,105 @@
+import time
+from random import randint, choice
+from logging import getLogger
+from aiogram.types import User, Message
+log = getLogger("Room")
+rooms = []
+
+
+class Room:
+    def __init__(self, admin):
+        self.created_at = time.time()
+        self.admin = admin,
+        self.users = [admin]
+        self.status = 0  # Waiting = 0, In Game = 1
+        self.spy = None
+        self.location = None
+        self.id = -1
+        self.generate_room_id()
+        rooms.append(self)
+
+    def generate_room_id(self):
+        id_is_used = True
+        while id_is_used:
+            id_is_used = False
+            room_id = randint(1000, 9999)
+            log.debug(f"Room id = {room_id}")
+            for room in rooms:
+                if room.id == room_id:
+                    id_is_used = True
+                    break
+            if not id_is_used:
+                log.debug(f"Created room id {room_id}")
+                self.id = room_id
+                return True
+
+    def add_new_user(self, user) -> bool:
+        """Add user to room. If he can enter returns True else return False"""
+        log.debug(f"User {user.user_id} trying to room {self.id}")
+        if self.can_user_enter(user) and user not in self.users:
+            self.users.append(user)
+            return True
+        else:
+            return False
+
+    def __del__(self):
+        log.debug(f"Room {self.id} deleted.")
+        if self.id != -1:
+            for i, room in rooms:
+                if room.id == self.id:
+                    del rooms[i]
+
+    def start_game(self):
+        if len(self.users) >= 4:
+            if self.status == 1:
+                raise GameAlreadyStartedError
+            self.location = generate_location()
+            self.spy = choice(self.users)
+            self.status = 1
+        else:
+            raise NotEnoughPlayersError
+
+    def can_user_enter(self, user: User) -> bool:
+        """Can user user connect ot this room"""
+        if self.status == 0:
+            return True
+        else:
+            return False # If game have already started
+# TODO STOP GAME
+
+def generate_location():
+    locations = ["a", "b", "c", "d"]
+    return choice(locations)
+
+
+def add_user_to_room(room_id: int, user: User) -> Room:
+    room_found = False
+    if not rooms:
+        # If there are no created rooms
+        raise NoSuchRoomError
+    for room in rooms:
+        if room.id == room_id:
+            room_found = True
+            break
+        if not room_found:
+            raise NoSuchRoomError
+        if not room.add_new_user(user):
+            raise CanNotEnterRoomError
+    return room
+
+
+class NoSuchRoomError(Exception):
+    pass # TODO Add logging to all Exceptions
+        # TODO Add exceptions to Exceptions file
+
+
+class NotEnoughPlayersError(Exception):
+    pass
+
+
+class GameAlreadyStartedError(Exception):
+    pass
+
+
+class CanNotEnterRoomError(Exception):
+    pass
