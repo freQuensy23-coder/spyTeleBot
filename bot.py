@@ -7,7 +7,7 @@ import logging
 from Exceptions import *
 
 API_TOKEN = getenv("telegram_bot_token")
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO) # TODO room info
 
 # TODO Use safe mesgs sender
 # Initialize bot and dispatcher
@@ -18,7 +18,7 @@ dp = Dispatcher(bot)
 async def notify(room: Room):
     """Send notification msg to everybody in room when game stopped"""
     for user in room.users:
-        log.debug("Send notification msgs to user [ID: user.id].")
+        log.info("Send notification msgs to user [ID: user.id].")
         await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
 
 
@@ -27,28 +27,28 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` or `/help` command
     """
-    log.debug(f"User [ID: {message.from_user.id}] print start.")
+    log.info(f"User [ID: {message.from_user.id}] print start.")
     await message.reply("Nice to see you in game 'Spy'. More about rules - /rules . To join room use /join {room_id} "
                         "(/j) to create it /create (/c) ")
 
 
 @dp.message_handler(commands=["rules", "r"])
 async def send_rules(message: Message):
-    log.debug(f"User [ID: {message.from_user.id}] get rules.")
+    log.info(f"User [ID: {message.from_user.id}] get rules.")
     await message.reply("Learn rules with wikipedia https://en.wikipedia.org/wiki/I_spy")
 
 
 @dp.message_handler(commands=["join", "j"])
 async def enter_room(message: Message):
     try:
-        room_id = int(message.get_args()[-1].strip())
+        room_id = int(message.get_args().strip()) # TODO send msg if no room id
         try:
             del_user(message.from_user)  # Delete this user from all other rooms
-            room = add_user_to_room(room_id, user=message.from_user)  # TODO  Delete this user from all other rooms
-            log.debug(f"User [ID: {message.from_user.id}] successfully entered room [ID: {room_id}")
+            room = add_user_to_room(room_id, user=message.from_user)
+            log.info(f"User [ID: {message.from_user.id}] successfully entered room [ID: {room_id}]")
             users_msg = ""
             for i, user in enumerate(room.users):
-                users_msg += f"{i}. {user.full_name} \n"
+                users_msg += f"{i + 1}. {user.full_name} \n"
             await message.reply(f"You have entered room. There are: \n {users_msg} \n there.")
         except CanNotEnterRoomError:
             log.info(f"User [ID: {message.from_user.id}] unsuccessfully entered room [ID: {room_id}]. Game already "
@@ -57,7 +57,7 @@ async def enter_room(message: Message):
         except NoSuchRoomError:
             log.info(
                 f"User [ID: {message.from_user.id}] unsuccessfully entered room [ID: {room_id}]. "
-                f"Room not found")
+                f"Room not found") # TODO send msg that room not found
 
     except Exception as e:
         log.info(f"Smth wrong with user [ID: {message.from_user.id}]. Exception {e}. Message {message.text}")
@@ -65,31 +65,30 @@ async def enter_room(message: Message):
 
 @dp.message_handler(commands=["/stop"])
 async def stop_game_handler(message: Message):
-    log.debug(f"User [ID: {message.from_user.id}] tried to stop game.")
+    log.info(f"User [ID: {message.from_user.id}] tried to stop game.")
     try:
         room = get_room_by_user(user=message.from_user)
         if room.admin == message.from_user:
-            log.debug(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
-            notify(room)
+            log.info(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
+            await notify(room)
             room.stop_game()  # TODO Send room id to admin
             await message.reply(f"Game closed successfully! Invite friends, /j {room.id}")
         else:
-            log.debug(f"User [ID: {message.from_user.id}] tried to delete room [ID: {room.id}], but he is not admin.")
+            log.info(f"User [ID: {message.from_user.id}] tried to delete room [ID: {room.id}], but he is not admin.")
             await message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
     except NoSuchRoomError:
-        log.debug(f"User [ID: {message.from_user.id}] tried to delete room, but he does not in any.")
+        log.info(f"User [ID: {message.from_user.id}] tried to delete room, but he does not in any.")
         await message.reply("You are not in room.")
     # TODO Send room info command
 
 
 @dp.message_handler(commands=["create", "c"])
 async def create_room(message: Message):
-    log.debug(f"User [ID: {message.from_user.id}] tried to create room")
+    log.info(f"User [ID: {message.from_user.id}] tried to create room")
     del_user(user=message.from_user)
     room = Room(admin=message.from_user)
-    await message.reply(f"Room created succsessfully. To join it use /j {room.id}")
-    logging.debug(f"Room [ID: {room.id}] created by user [ID: {message.from_user.id}]")
-
+    await message.reply(f"Room created succsessfully. To join it use: \n /j {room.id}")
+    logging.info(f"Room [ID: {room.id}] created by user [ID: {message.from_user.id}]")
 
 
 if __name__ == '__main__':

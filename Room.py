@@ -37,7 +37,7 @@ class Room:
 
     def add_new_user(self, user) -> bool:
         """Add user to room. If he can enter returns True else return False"""
-        log.debug(f"User {user.user_id} trying to room {self.id}")
+        log.debug(f"User {user.id} trying to room {self.id}")
         if self.can_user_enter(user) and user not in self.users:
             self.users.append(user)
             return True
@@ -82,7 +82,7 @@ class Room:
 
 def generate_location():
     locations = ["a", "b", "c", "d"]
-    return choice(locations)
+    return choice(locations) # TODO create location func
 
 
 def add_user_to_room(room_id: int, user: User) -> Room:
@@ -94,10 +94,10 @@ def add_user_to_room(room_id: int, user: User) -> Room:
         if room.id == room_id:
             room_found = True
             break
-        if not room_found:
-            raise NoSuchRoomError
-        if not room.add_new_user(user):
-            raise CanNotEnterRoomError
+    if not room_found:
+        raise NoSuchRoomError
+    if not room.add_new_user(user):
+        raise CanNotEnterRoomError
     return room
 
 
@@ -105,7 +105,7 @@ def del_user(user: User):
     if rooms:
         for room in rooms:
             try:
-                room.remove(user)
+                room.users.remove(user)
             except ValueError:
                 pass  # If such user not fount in this room
 
