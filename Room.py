@@ -67,8 +67,13 @@ class Room:
         else:
             return False  # If game have already started
 
+    def stop_game(self):
+        self.spy = None
+        self.location = None
+        self.status = 0
 
-# TODO STOP GAME
+# TODO Waste cleaner - clean rooms that crated a long time ago
+
 
 def generate_location():
     locations = ["a", "b", "c", "d"]
