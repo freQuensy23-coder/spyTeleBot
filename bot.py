@@ -4,6 +4,8 @@ from aiogram.types import Message, User
 from Room import *
 from os import getenv
 import logging
+from Exceptions import *
+
 
 API_TOKEN = getenv("telegram_bot_token")
 logging.basicConfig(level=logging.INFO)
@@ -53,6 +55,12 @@ async def create_room(message: Message):
 
     except Exception as e:
         log.info(f"Smth wrong with user [ID: {message.from_user.id}]. Exception {e}. Message {message.text}")
+
+
+@dp.message_handler(commands=["/stop"])
+def stop_game_handler(message: Message):
+    log.debug(f"User [ID: {message.from_user.id}] tried to stop game.")
+
 
 
 if __name__ == '__main__':

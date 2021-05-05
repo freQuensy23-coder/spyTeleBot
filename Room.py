@@ -2,7 +2,7 @@ import time
 from random import randint, choice
 from logging import getLogger
 from aiogram.types import User, Message
-
+from Exceptions import *
 log = getLogger("Room")
 rooms = []
 
@@ -68,6 +68,7 @@ class Room:
             return False  # If game have already started
 
     def stop_game(self):
+        self.notify()
         self.spy = None
         self.location = None
         self.status = 0
@@ -103,20 +104,3 @@ def del_user(user: User):
                 room.remove(user)
             except ValueError:
                 pass  # If such user not fount in this room
-
-
-class NoSuchRoomError(Exception):
-    pass  # TODO Add logging to all Exceptions
-    # TODO Add exceptions to Exceptions file
-
-
-class NotEnoughPlayersError(Exception):
-    pass
-
-
-class GameAlreadyStartedError(Exception):
-    pass
-
-
-class CanNotEnterRoomError(Exception):
-    pass
