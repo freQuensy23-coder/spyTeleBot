@@ -9,9 +9,13 @@ rooms = []
 locations = ["a", "b", "c", "d"]
 location_text = "".join([f"* {location}\n" for location in locations])
 
+room_ttl = 2 * 24 * 60 * 60
+
+
 class Room:
     def __init__(self, admin):
         self.created_at = time.time()
+        self.last_activity = time.time()
         self.admin: User = admin
         self.users: list[User] = [admin]
         self.status: int = 0  # Waiting = 0, In Game = 1
@@ -51,11 +55,13 @@ class Room:
             for i, room in rooms:
                 if room.id == self.id:
                     del rooms[i]
+
     def __hash__(self):
         return self.id
 
     def start_game(self):
-        if len(self.users) >= 3: # TODO 3 Debug
+        self.last_activity = time.time()
+        if len(self.users) >= 3:  # TODO 3 Debug
             if self.status == 1:
                 raise GameAlreadyStartedError
             self.location = generate_location()
@@ -83,12 +89,18 @@ class Room:
             self.stop_game()
             self.users.remove(user_to_del)
 
-# TODO Waste cleaner - clean rooms that crated a long time ago
+
+def clean_waste():
+    """Delete old rooms"""
+    for room in rooms:
+        if time.time() - room.last_activity >= room_ttl:
+            log.info(f"Room [ID: {room.id}] deleted at {time.time()}")
+            del room
 
 
 def generate_location():
     global locations
-    return choice(locations) # TODO create location func
+    return choice(locations)
 
 
 def add_user_to_room(room_id: int, user: User) -> Room:

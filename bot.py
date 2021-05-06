@@ -26,7 +26,7 @@ async def notify(room: Room, event: str):
         for user in room.users:
             if user == room.spy:
                 await bot.send_message(user.id,
-                                       "You are spy in this game. You guess location. Use /location")  # TODO /location
+                                       "You are spy in this game. You guess location. Use /location")
             else:
                 await bot.send_message(user.id, f"Lacation is {room.location}. You should find spy.")
 
