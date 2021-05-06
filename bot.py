@@ -7,7 +7,7 @@ import logging
 from Exceptions import *
 
 API_TOKEN = getenv("telegram_bot_token")
-logging.basicConfig(level=logging.INFO)  # TODO room info
+logging.basicConfig(level=logging.INFO)
 
 # TODO Use safe mesgs sender
 # Initialize bot and dispatcher
@@ -50,6 +50,7 @@ async def send_rules(message: Message):
     await message.reply("Learn rules with wikipedia https://en.wikipedia.org/wiki/I_spy")
 
 
+# TODO /leave
 @dp.message_handler(commands=["join", "j"])
 async def enter_room(message: Message):
     try:
@@ -122,8 +123,8 @@ async def begin_game_handler(message: Message):
                 await notify(room, "start")
             except NotEnoughPlayersError:
                 log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin game. Not enough players.")
-                await message.reply("You can't start game because there are not enough players")  # TODO send room info
-
+                await message.reply("You can't start game because there are not enough players")
+                await send_room_info(message)
         else:
             log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin room [ID: {room.id}. He is not "
                      f"admin")
@@ -134,7 +135,7 @@ async def begin_game_handler(message: Message):
 
 
 @dp.message_handler(commands=["room", "roominfo", "info"])
-def send_room_info(message: Message):
+async def send_room_info(message: Message):
     log.info(f"User [ID: {message.from_user.id}] wants to get room info")
     try:
         room = get_room_by_user(message.from_user)
@@ -161,6 +162,21 @@ def get_room_info(room: Room) -> str:
 
     return info
 
+
+@dp.message_handler(commands=["l", "leave"])
+async def leave_handler(message: Message):
+    log.info(f"User [ID: {message.from_user.id}] tried to leave his room")
+    try:
+        room = get_room_by_user(message.from_user)
+        if room.admin == message.from_user:
+            log.info(f"User [ID: {message.from_user.id}] delete his room [ID: {room.id}]")
+            await notify(room, "deleted")
+            del room
+        else:
+            room.del_user(user_to_del=message.from_user)
+    except NoSuchRoomError:
+        log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to leave room but he is not in room.")
+        await message.reply("You can't leave room. You have not entered it.")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)

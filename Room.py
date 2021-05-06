@@ -75,6 +75,12 @@ class Room:
         self.location = None
         self.status = 0
 
+    def del_user(self, user_to_del):
+        if self.status == 0:
+            self.users.remove(user_to_del)
+        if self.status == 1:
+            self.stop_game()
+            self.users.remove(user_to_del)
 
 # TODO Waste cleaner - clean rooms that crated a long time ago
 
