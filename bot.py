@@ -7,7 +7,7 @@ import logging
 from Exceptions import *
 
 API_TOKEN = getenv("telegram_bot_token")
-logging.basicConfig(level=logging.INFO) # TODO room info
+logging.basicConfig(level=logging.INFO)  # TODO room info
 
 # TODO Use safe mesgs sender
 # Initialize bot and dispatcher
@@ -22,11 +22,13 @@ async def notify(room: Room, event: str):
     if event == "stop":
         for user in room.users:
             log.info("Send notification msgs to user [ID: user.id].")
-            await bot.send_message(user.id, text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
+            await bot.send_message(user.id,
+                                   text=f"Game stopped.\n * Location: {room.location}.\n * Spy: {room.spy.full_name}")
     if event == "start":
         for user in room.users:
             if user == room.spy:
-                await bot.send_message(user.id, "You are spy in this game. You guess location. Use /location") # TODO /location
+                await bot.send_message(user.id,
+                                       "You are spy in this game. You guess location. Use /location")  # TODO /location
             else:
                 await bot.send_message(user.id, f"Lacation is {room.location}. You should find spy.")
         pass
@@ -51,7 +53,7 @@ async def send_rules(message: Message):
 @dp.message_handler(commands=["join", "j"])
 async def enter_room(message: Message):
     try:
-        room_id = int(message.get_args().strip()) # TODO send msg if no room id
+        room_id = int(message.get_args().strip())
         try:
             del_user(message.from_user)  # Delete this user from all other rooms
             room = add_user_to_room(room_id, user=message.from_user)
@@ -67,8 +69,11 @@ async def enter_room(message: Message):
         except NoSuchRoomError:
             log.info(
                 f"User [ID: {message.from_user.id}] unsuccessfully entered room [ID: {room_id}]. "
-                f"Room not found") # TODO send msg that room not found
-
+                f"Room not found")
+            await message.reply("Room not found")
+    except ValueError:
+        log.info(f"User [ID: {message.from_user.id}] tried to join room but he does not send room id.")
+        await message.reply("Use /join {room id} to join room or /create (/c) to create it")
     except Exception as e:
         log.info(f"Smth wrong with user [ID: {message.from_user.id}]. Exception {e}. Message {message.text}")
 
@@ -78,18 +83,21 @@ async def stop_game_handler(message: Message):
     log.info(f"User [ID: {message.from_user.id}] tried to stop game.")
     try:
         room = get_room_by_user(user=message.from_user)
+        if room.status != 1:
+            log.info(f"User [ID: {message.from_user.id}] tried to stop room [ID: {room.id}] but it is already stopped")
+            await message.reply("Game has not started yet. Use /begin to start")
         if room.admin == message.from_user:
             log.info(f"User [ID: {message.from_user.id}] successfully stopped room [ID : {room.id}]")
-            await notify(room, "stop") # TODO Check if game started
-            room.stop_game()  # TODO Send room id to admin
-            await message.reply(f"Game ended successfully! You can play again now  (/b) or invite friends,\n /j {room.id}")
+            await notify(room, "stop")
+            room.stop_game()
+            await message.reply(
+                f"Game ended successfully! You can play again now  (/b) or invite friends,\n /j {room.id}")
         else:
             log.info(f"User [ID: {message.from_user.id}] tried to delete room [ID: {room.id}], but he is not admin.")
             await message.reply(f"You are not admin. Ask {room.admin.full_name} do this.")
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] tried to delete room, but he does not in any.")
         await message.reply("You are not in room.")
-    # TODO Send room info command
 
 
 @dp.message_handler(commands=["create", "c"])
@@ -97,11 +105,12 @@ async def create_room(message: Message):
     log.info(f"User [ID: {message.from_user.id}] tried to create room")
     del_user(user=message.from_user)
     room = Room(admin=message.from_user)
-    await message.reply(f"Room created succsessfully. To join it use: \n /j {room.id}")
+    await message.reply(f"Room created successfully. To join it use: \n /j {room.id} (send this code to your "
+                        f"friends). To start game use /begin (/b)")
     logging.info(f"Room [ID: {room.id}] created by user [ID: {message.from_user.id}]")
 
 
-@dp.message_handler(commands=["begin", "b"]) # TODO say to admin how to start game
+@dp.message_handler(commands=["begin", "b"])
 async def begin_game_handler(message: Message):
     log.info(f"User [ID: {message.from_user.id}]] tried to start game")
     try:
@@ -113,7 +122,7 @@ async def begin_game_handler(message: Message):
                 await notify(room, "start")
             except NotEnoughPlayersError:
                 log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin game. Not enough players.")
-                await message.reply("You can't start game because there are not enough players") # TODO send room info
+                await message.reply("You can't start game because there are not enough players")  # TODO send room info
 
         else:
             log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin room [ID: {room.id}. He is not "
@@ -122,6 +131,36 @@ async def begin_game_handler(message: Message):
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to begin game. Room not found")
         await message.reply("Room not found. Create it using /c or join /j")
+
+
+@dp.message_handler(commands=["room", "roominfo", "info"])
+def send_room_info(message: Message):
+    log.info(f"User [ID: {message.from_user.id}] wants to get room info")
+    try:
+        room = get_room_by_user(message.from_user)
+        info = get_room_info(room)
+        log.info(f"User [ID: {message.from_user.id}] get info about room [ID: {room.id}]")
+        log.debug(info)
+        message.reply(text=info)
+    except NoSuchRoomError:
+        log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to get room info. No such room.")
+        await message.reply("Room not found. Create it using /c or join /j")
+
+
+def get_room_info(room: Room) -> str:
+    """Get info about room """
+    info = ""
+    if room.status == 0:
+        info += f"Waiting for host ({room.admin.full_name}) to start. Players in room: \n"
+    elif room.status == 1:
+        info += f"Game is started by ({room.admin.full_name}). Players in room: \n"
+    for i, user in enumerate(room.users):
+        if user == room.admin:
+            info += "*"
+        info += f"{i + 1}. {user.full_name} \n"
+
+    return info
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
