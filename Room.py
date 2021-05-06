@@ -6,7 +6,8 @@ from Exceptions import *
 
 log = getLogger("Room")
 rooms = []
-
+locations = ["a", "b", "c", "d"]
+location_text = "".join([f"* {location}\n" for location in locations])
 
 class Room:
     def __init__(self, admin):
@@ -86,7 +87,7 @@ class Room:
 
 
 def generate_location():
-    locations = ["a", "b", "c", "d"]
+    global locations
     return choice(locations) # TODO create location func
 
 

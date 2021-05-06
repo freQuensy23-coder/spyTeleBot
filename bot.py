@@ -54,7 +54,6 @@ async def send_rules(message: Message):
     await message.reply("Learn rules with wikipedia https://en.wikipedia.org/wiki/I_spy")
 
 
-# TODO /leave
 @dp.message_handler(commands=["join", "j"])
 async def enter_room(message: Message):
     try:
@@ -181,6 +180,22 @@ async def leave_handler(message: Message):
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to leave room but he is not in room.")
         await message.reply("You can't leave room. You have not entered it.")
+
+
+@dp.message_handler(commands=["/loc", "/locations"])
+async def send_locations(message: Message):
+    # TODO add logging
+    try:
+        room = get_room_by_user(user=message.from_user)
+        if room.status == 0:
+            await message.reply(f"Available locations: \n {location_text}")
+        else:
+            if message.from_user == room.spy:
+                await message.reply(f"You are spy in this game. Available locations: {location_text}.")
+            else:
+                await message.reply(f"Current location is {room.location}. Available locations: {location_text}.")
+    except NoSuchRoomError:
+        await message.reply(f"Available locations: \n {location_text}")
 
 
 if __name__ == '__main__':
