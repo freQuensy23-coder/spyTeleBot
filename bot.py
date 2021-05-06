@@ -47,7 +47,7 @@ async def send_welcome(message: types.Message):
                         "(/j) to create it /create (/c) ")
 
 
-@dp.message_handler(commands=["rules", "r"])
+@dp.message_handler(commands=["rules", "r"]) # TODO Fix this    
 async def send_rules(message: Message):
     log.info(f"User [ID: {message.from_user.id}] get rules.")
     await message.reply("Learn rules with wikipedia https://en.wikipedia.org/wiki/I_spy")
