@@ -3,6 +3,7 @@ from Room import *
 from os import getenv
 import logging
 from Exceptions import *
+from aiogram.types import Message, User
 
 API_TOKEN = getenv("telegram_bot_token")
 logging.basicConfig(level=logging.INFO)
