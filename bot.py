@@ -31,7 +31,11 @@ async def notify(room: Room, event: str):
                                        "You are spy in this game. You guess location. Use /location")  # TODO /location
             else:
                 await bot.send_message(user.id, f"Lacation is {room.location}. You should find spy.")
-        pass
+
+    if event == "leave":
+        for user in room.users:
+            await bot.send_message(user.id, text="Somebode leave your room. If it was admin, room will be closed. Use "
+                                                 "/info.")
 
 
 @dp.message_handler(commands=['start', 'help'])
@@ -142,7 +146,7 @@ async def send_room_info(message: Message):
         info = get_room_info(room)
         log.info(f"User [ID: {message.from_user.id}] get info about room [ID: {room.id}]")
         log.debug(info)
-        message.reply(text=info)
+        await message.reply(text=info)
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to get room info. No such room.")
         await message.reply("Room not found. Create it using /c or join /j")
@@ -177,6 +181,7 @@ async def leave_handler(message: Message):
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to leave room but he is not in room.")
         await message.reply("You can't leave room. You have not entered it.")
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
