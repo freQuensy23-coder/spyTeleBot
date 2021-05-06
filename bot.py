@@ -29,13 +29,14 @@ async def notify(room: Room, event: str):
                 await bot.send_message(user.id,
                                        "You are spy in this game. You guess location. Use /location")
             else:
-                await bot.send_message(user.id, f"Lacation is {room.location}. You should find spy.")
+                await bot.send_message(user.id, f"Locations is {room.location}. You should find spy.")
 
     if event == "leave":
         for user in room.users:
-            await bot.send_message(user.id, text="Somebode leave your room. If it was admin, room will be closed. Use "
-                                                 "/info.")
-
+            await bot.send_message(user.id, text="Somebody leave your room.")
+    if event == "deleted":
+        for user in room.users:
+            await bot.send_message(user.id, text="Room was deleted. Create new one /c or /join")
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
@@ -159,7 +160,7 @@ def get_room_info(room: Room) -> str:
         info += f"Game is started by ({room.admin.full_name}). Players in room: \n"
     for i, user in enumerate(room.users):
         if user == room.admin:
-            info += "*"
+            info += "(admin)"
         info += f"{i + 1}. {user.full_name} \n"
 
     return info
@@ -175,13 +176,14 @@ async def leave_handler(message: Message):
             await notify(room, "deleted")
             del room
         else:
+            await notify(room, "leave")
             room.del_user(user_to_del=message.from_user)
     except NoSuchRoomError:
         log.info(f"User [ID: {message.from_user.id}] unsuccessfully tried to leave room but he is not in room.")
         await message.reply("You can't leave room. You have not entered it.")
 
 
-@dp.message_handler(commands=["/loc", "/locations"])
+@dp.message_handler(commands=["loc", "locations", "location"])
 async def send_locations(message: Message):
     # TODO add logging
     try:
@@ -190,7 +192,7 @@ async def send_locations(message: Message):
             await message.reply(f"Available locations: \n {location_text}")
         else:
             if message.from_user == room.spy:
-                await message.reply(f"You are spy in this game. Available locations: {location_text}.")
+                await message.reply(f"You are spy in this game. Available locations:\n {location_text}.")
             else:
                 await message.reply(f"Current location is {room.location}. Available locations: {location_text}.")
     except NoSuchRoomError:
