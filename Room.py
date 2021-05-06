@@ -1,7 +1,7 @@
 import time
 from random import randint, choice
 from logging import getLogger
-from aiogram.types import User, Message
+from aiogram.types import User
 from Exceptions import *
 
 log = getLogger("Room")

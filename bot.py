@@ -1,6 +1,4 @@
-import aiogram
 from aiogram import *
-from aiogram.types import Message, User
 from Room import *
 from os import getenv
 import logging
